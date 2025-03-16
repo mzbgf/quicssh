@@ -16,19 +16,15 @@ linters-settings:
     locale: US
 
 linters:
-  disable-all: true
-  enable:
-    - goconst
-    - misspell
-    - deadcode
-    - misspell
-    - structcheck
-    - errcheck
-    - unused
-    - varcheck
-    - staticcheck
-    - unconvert
-    - gofmt
-    - goimports
-    - golint
-    - ineffassign
+  enable-all: true
+  disable:
+    - depguard
+    - exhaustruct
+    - gosec     # must be turned on
+    - lll       # nice to have
+    - mnd       # nice to have
+    - nlreturn  # nice to have
+    - tenv
+    - varnamelen
+    - wrapcheck # nice to have
+    - wsl
