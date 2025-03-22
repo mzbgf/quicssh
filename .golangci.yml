@@ -1,14 +1,4 @@
-run:
-  deadline: 1m
-  tests: false
-  #skip-files:
-  #  - ".*\\.gen\\.go"
-
 linters-settings:
-  golint:
-    min-confidence: 0
-  maligned:
-    suggest-new: true
   goconst:
     min-len: 5
     min-occurrences: 4
