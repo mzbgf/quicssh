@@ -50,6 +50,7 @@ func client(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	defer stream.Close()
 
 	log.Printf("Piping stream with QUIC...")
 	c1 := readAndWrite(ctx, stream, os.Stdout)
