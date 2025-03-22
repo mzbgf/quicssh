@@ -22,22 +22,22 @@ func client(c *cli.Context) error {
 
 	udpAddr, err := net.ResolveUDPAddr("udp", c.String("addr"))
 	if err != nil {
-		return err
+		return er(err)
 	}
 	srcAddr, err := net.ResolveUDPAddr("udp", c.String("localaddr"))
 	if err != nil {
-		return err
+		return er(err)
 	}
 
 	log.Printf("Dialing %q->%q...", srcAddr.String(), udpAddr.String())
 	conn, err := net.ListenUDP("udp", srcAddr)
 	if err != nil {
-		return err
+		return er(err)
 	}
 	quicConfig := &quic.Config{MaxIdleTimeout: 10 * time.Second, KeepAlivePeriod: 5 * time.Second}
 	session, err := quic.Dial(ctx, conn, udpAddr, config, quicConfig)
 	if err != nil {
-		return err
+		return er(err)
 	}
 	defer func() {
 		if err := session.CloseWithError(0, "close"); err != nil {
@@ -48,7 +48,7 @@ func client(c *cli.Context) error {
 	log.Printf("Opening stream sync...")
 	stream, err := session.OpenStreamSync(ctx)
 	if err != nil {
-		return err
+		return er(err)
 	}
 	defer stream.Close()
 

@@ -18,5 +18,4 @@ linters:
     - paralleltest # for now we have only one integration (not parallelable) test
     - tenv
     - varnamelen
-    - wrapcheck # nice to have
     - wsl

@@ -2,8 +2,12 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
+	"log"
 	"os"
+	"path"
+	"runtime"
 	"runtime/debug"
 
 	cli "github.com/urfave/cli/v2"
@@ -35,7 +39,7 @@ func main() {
 		},
 	}
 	if err := app.Run(os.Args); err != nil {
-		panic(err)
+		log.Printf("Error: %v", err)
 	}
 }
 
@@ -49,18 +53,18 @@ func readAndWrite(ctx context.Context, r io.Reader, w io.Writer) <-chan error {
 		for {
 			select {
 			case <-ctx.Done():
-				c <- ctx.Err()
+				c <- er(ctx.Err())
 				return
 			default:
 				nr, err := r.Read(buff)
 				if err != nil {
-					c <- err
+					c <- er(err)
 					return
 				}
 				if nr > 0 {
 					_, err := io.Copy(w, bytes.NewReader(buff[:nr]))
 					if err != nil {
-						c <- err
+						c <- er(err)
 						return
 					}
 				}
@@ -68,4 +72,9 @@ func readAndWrite(ctx context.Context, r io.Reader, w io.Writer) <-chan error {
 		}
 	}()
 	return c
+}
+
+func er(e error) error {
+	_, f, l, _ := runtime.Caller(1)
+	return fmt.Errorf("%s:%d: %w", path.Base(f), l, e)
 }

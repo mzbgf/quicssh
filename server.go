@@ -20,18 +20,18 @@ func server(c *cli.Context) error {
 	// generate TLS certificate
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return err
+		return er(err)
 	}
 	template := x509.Certificate{SerialNumber: big.NewInt(1)}
 	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
 	if err != nil {
-		return err
+		return er(err)
 	}
 	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
 	tlsCert, err := tls.X509KeyPair(certPEM, keyPEM)
 	if err != nil {
-		return err
+		return er(err)
 	}
 	config := &tls.Config{
 		Certificates: []tls.Certificate{tlsCert},
@@ -40,13 +40,13 @@ func server(c *cli.Context) error {
 
 	raddr, err := net.ResolveTCPAddr("tcp", c.String("sshdaddr"))
 	if err != nil {
-		return err
+		return er(err)
 	}
 
 	// configure listener
 	listener, err := quic.ListenAddr(c.String("bind"), config, nil)
 	if err != nil {
-		return err
+		return er(err)
 	}
 	defer listener.Close()
 	log.Printf("Listening at %q... (sshd addr: %q)", c.String("bind"), c.String("sshdaddr"))
