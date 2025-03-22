@@ -41,7 +41,8 @@ func client(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	session, err := quic.Dial(ctx, conn, udpAddr, config, &quic.Config{MaxIdleTimeout: 10 * time.Second, KeepAlivePeriod: 5 * time.Second})
+	quicConfig := &quic.Config{MaxIdleTimeout: 10 * time.Second, KeepAlivePeriod: 5 * time.Second}
+	session, err := quic.Dial(ctx, conn, udpAddr, config, quicConfig)
 	if err != nil {
 		return err
 	}

@@ -12,7 +12,6 @@ linters:
   disable:
     - depguard
     - exhaustruct
-    - lll       # nice to have
     - mnd       # nice to have
     - nlreturn  # nice to have
     - tenv
