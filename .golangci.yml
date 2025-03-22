@@ -18,3 +18,4 @@ linters:
     - varnamelen
     - wrapcheck # nice to have
     - wsl
+    - paralleltest # for now we have only one integration (not parallelable) test

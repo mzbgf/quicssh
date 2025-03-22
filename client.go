@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -10,6 +11,11 @@ import (
 	quic "github.com/quic-go/quic-go"
 	cli "github.com/urfave/cli/v2"
 	"golang.org/x/net/context"
+)
+
+var ( // the simplest way to make code testable
+	inputStream  = io.Reader(os.Stdin)  //nolint:gochecknoglobals
+	outputStream = io.Writer(os.Stdout) //nolint:gochecknoglobals
 )
 
 func client(c *cli.Context) error {
@@ -53,8 +59,8 @@ func client(c *cli.Context) error {
 	defer stream.Close()
 
 	log.Printf("Piping stream with QUIC...")
-	c1 := readAndWrite(ctx, stream, os.Stdout)
-	c2 := readAndWrite(ctx, os.Stdin, stream)
+	c1 := readAndWrite(ctx, stream, outputStream)
+	c2 := readAndWrite(ctx, inputStream, stream)
 	select {
 	case err = <-c1:
 	case err = <-c2:
