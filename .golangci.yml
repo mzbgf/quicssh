@@ -4,13 +4,14 @@ linters-settings:
     min-occurrences: 4
   misspell:
     locale: US
+  gosec:
+    excludes: [G402]
 
 linters:
   enable-all: true
   disable:
     - depguard
     - exhaustruct
-    - gosec     # must be turned on
     - lll       # nice to have
     - mnd       # nice to have
     - nlreturn  # nice to have

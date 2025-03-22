@@ -18,7 +18,7 @@ import (
 
 func server(c *cli.Context) error {
 	// generate TLS certificate
-	key, err := rsa.GenerateKey(rand.Reader, 1024)
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return err
 	}
