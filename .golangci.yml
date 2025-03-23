@@ -12,10 +12,11 @@ linters:
   disable:
     - depguard
     - exhaustruct
+    - godox     # TODOs is ok
     - mnd       # nice to have
     - nlreturn  # nice to have
+    - paralleltest # for now we have only one integration (not parallelable) test
     - tenv
     - varnamelen
     - wrapcheck # nice to have
     - wsl
-    - paralleltest # for now we have only one integration (not parallelable) test

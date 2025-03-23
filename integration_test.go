@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"io"
 	"net"
+	"strings"
 	"testing"
 
 	cli "github.com/urfave/cli/v2"
@@ -23,14 +25,20 @@ func TestInegratinGoldenFlow(t *testing.T) {
 	// run quicssh server
 	serverContext := flags("sshdaddr", sshdAddr, "bind", bindAddr)
 	go func() {
-		server(serverContext) //nolint:errcheck // TODO: make it able to shutdown gracefully, check error
+		err := server(serverContext) // TODO: make it able to shutdown gracefully, check error
+		if strings.Contains(err.Error(), "address already in use") {
+			panic(err.Error()) // cheapest way to fail test from goroutine
+		}
 	}()
 
 	// run quicssh client
 	clientContext := flags("addr", bindAddr, "localaddr", ":0")
-	wr, rd := tweaksStdIO()
+	wr, rd := tweaksStdIO(clientContext)
 	go func() {
-		client(clientContext) //nolint:errcheck // TODO: shutdownable, check error
+		err := client(clientContext) // TODO: shutdownable, check error
+		if !errors.Is(err, io.EOF) {
+			panic(err.Error())
+		}
 	}()
 
 	// writing data to client
@@ -49,12 +57,12 @@ func TestInegratinGoldenFlow(t *testing.T) {
 	}
 }
 
-func tweaksStdIO() (io.Writer, io.Reader) {
+func tweaksStdIO(c *cli.Context) (io.Writer, io.Reader) {
 	r1, w1 := io.Pipe()
 	r2, w2 := io.Pipe()
-	inputStream = r1  // ATTENTION: tweaking global variable
-	outputStream = w2 // ATTENTION: tweaking global variable
-	return w1, r2     // returning the opposite end of pipes
+	c.App.Reader = r1
+	c.App.Writer = w2
+	return w1, r2 // returning the opposite end of pipes
 }
 
 func flags(pairs ...string) *cli.Context {
