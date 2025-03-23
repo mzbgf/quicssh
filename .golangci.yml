@@ -6,6 +6,11 @@ linters-settings:
     locale: US
   gosec:
     excludes: [G402]
+  ireturn:
+    allow:
+      - context.Context
+      - error
+      - io.(Reader|Writer)
 
 linters:
   enable-all: true

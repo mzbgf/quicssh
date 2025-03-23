@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -12,11 +13,10 @@ import (
 
 	quic "github.com/quic-go/quic-go"
 	cli "github.com/urfave/cli/v2"
-	"golang.org/x/net/context"
 )
 
 func server(c *cli.Context) error {
-	ctx := withLabel(context.Background(), "server")
+	ctx := withLabel(c.Context, "server")
 
 	// generate TLS certificate
 	key, err := rsa.GenerateKey(rand.Reader, 2048)

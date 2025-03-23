@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -11,11 +12,11 @@ import (
 	"runtime/debug"
 
 	cli "github.com/urfave/cli/v2"
-	"golang.org/x/net/context"
 )
 
 func main() {
-	ctx := context.Background() // TODO: it is application context, could be used for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background()) // TODO: application context, good for graceful shutdown
+	defer cancel()
 	build, _ := debug.ReadBuildInfo()
 	app := &cli.App{
 		Version: build.Main.Version,
@@ -39,7 +40,7 @@ func main() {
 			},
 		},
 	}
-	if err := app.Run(os.Args); err != nil {
+	if err := app.RunContext(ctx, os.Args); err != nil {
 		logf(ctx, "Error: %v", err)
 	}
 }

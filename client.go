@@ -7,12 +7,10 @@ import (
 
 	quic "github.com/quic-go/quic-go"
 	cli "github.com/urfave/cli/v2"
-	"golang.org/x/net/context"
 )
 
 func client(c *cli.Context) error {
-	ctx, cancel := context.WithCancel(withLabel(context.Background(), "client"))
-	defer cancel()
+	ctx := withLabel(c.Context, "client")
 
 	config := &tls.Config{
 		InsecureSkipVerify: true,
