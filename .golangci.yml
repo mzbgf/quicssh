@@ -6,6 +6,11 @@ linters-settings:
     locale: US
   gosec:
     excludes: [G402]
+  ireturn:
+    allow:
+      - context.Context
+      - error
+      - io.(Reader|Writer)
 
 linters:
   enable-all: true
@@ -18,5 +23,4 @@ linters:
     - paralleltest # for now we have only one integration (not parallelable) test
     - tenv
     - varnamelen
-    - wrapcheck # nice to have
     - wsl
