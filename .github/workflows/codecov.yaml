@@ -1,0 +1,21 @@
+---
+name: coverage # this string appears on badge
+on:
+  - push
+  - pull_request
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    name: "Unit tests and code coverage"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+      - run: "go test -v -coverprofile=coverage.txt -covermode=atomic -timeout=10s ."
+      - uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.txt
+          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }} # required
