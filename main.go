@@ -2,15 +2,21 @@ package main
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"io"
+	"log"
 	"os"
+	"path"
+	"runtime"
 	"runtime/debug"
 
 	cli "github.com/urfave/cli/v2"
-	"golang.org/x/net/context"
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background()) // TODO: application context, good for graceful shutdown
+	defer cancel()
 	build, _ := debug.ReadBuildInfo()
 	app := &cli.App{
 		Version: build.Main.Version,
@@ -34,8 +40,8 @@ func main() {
 			},
 		},
 	}
-	if err := app.Run(os.Args); err != nil {
-		panic(err)
+	if err := app.RunContext(ctx, os.Args); err != nil {
+		logf(ctx, "Error: %v", err)
 	}
 }
 
@@ -49,18 +55,18 @@ func readAndWrite(ctx context.Context, r io.Reader, w io.Writer) <-chan error {
 		for {
 			select {
 			case <-ctx.Done():
-				c <- ctx.Err()
+				c <- er(ctx, ctx.Err())
 				return
 			default:
 				nr, err := r.Read(buff)
 				if err != nil {
-					c <- err
+					c <- er(ctx, err)
 					return
 				}
 				if nr > 0 {
 					_, err := io.Copy(w, bytes.NewReader(buff[:nr]))
 					if err != nil {
-						c <- err
+						c <- er(ctx, err)
 						return
 					}
 				}
@@ -68,4 +74,32 @@ func readAndWrite(ctx context.Context, r io.Reader, w io.Writer) <-chan error {
 		}
 	}()
 	return c
+}
+
+func er(ctx context.Context, e error) error {
+	_, f, l, _ := runtime.Caller(1)
+	return fmt.Errorf("[%s] %s:%d: %w", label(ctx), path.Base(f), l, e)
+}
+
+func logf(ctx context.Context, format string, v ...any) {
+	log.Printf("[%s] %s", label(ctx), fmt.Sprintf(format, v...))
+}
+
+type lableKeyT int
+
+const lableKey = lableKeyT(0)
+
+func withLabel(ctx context.Context, label string) context.Context {
+	if parent, ok := ctx.Value(lableKey).(string); ok {
+		label = parent + ">" + label
+	}
+	return context.WithValue(ctx, lableKey, label)
+}
+
+func label(ctx context.Context) string {
+	label, _ := ctx.Value(lableKey).(string)
+	if label == "" {
+		return "main"
+	}
+	return label
 }
