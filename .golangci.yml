@@ -11,6 +11,7 @@ linters-settings:
       - context.Context
       - error
       - io.(Reader|Writer)
+      - io.(Read|Write)Closer
 
 linters:
   enable-all: true
@@ -24,3 +25,11 @@ linters:
     - tenv
     - varnamelen
     - wsl
+
+issues:
+  exclude-rules:
+    - path: _test.go
+      linters:
+        - wrapcheck  # allow naked errors in tests
+        - fatcontext # ok in nested tests
+        - unparam    # not a crime in tests
