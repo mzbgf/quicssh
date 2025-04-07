@@ -7,9 +7,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"io"
 	"math/big"
 	"net"
+	"time"
 
 	quic "github.com/quic-go/quic-go"
 	cli "github.com/urfave/cli/v2"
@@ -56,7 +58,11 @@ func server(c *cli.Context) error {
 		logf(ctx, "Accepting connection...")
 		session, err := listener.Accept(ctx)
 		if err != nil {
-			logf(ctx, "listener error: %v", err)
+			if errors.Is(err, context.Canceled) {
+				return er(ctx, err)
+			}
+			logf(ctx, "Listener error (sleeping one second): %v", err)
+			time.Sleep(time.Second)
 			continue
 		}
 
