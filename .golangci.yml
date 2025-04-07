@@ -2,6 +2,8 @@ linters-settings:
   goconst:
     min-len: 5
     min-occurrences: 4
+  lll:
+    line-length: 150
   misspell:
     locale: US
   gosec:

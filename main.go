@@ -35,6 +35,7 @@ func application() *cli.Command {
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "bind", Value: "localhost:4242", Usage: "bind address"},
 					&cli.StringFlag{Name: "sshdaddr", Value: "localhost:22", Usage: "target address of sshd"},
+					&cli.StringFlag{Name: "idletimeout", Value: "0s", Usage: "exit on idle interval (10s, 2m, 1h)"},
 				},
 				Action: server,
 			},
