@@ -11,39 +11,50 @@ import (
 	"io"
 	"math/big"
 	"net"
+	"sync/atomic"
 	"time"
 
 	quic "github.com/quic-go/quic-go"
 	cli "github.com/urfave/cli/v3"
 )
 
-func server(ctx context.Context, cmd *cli.Command) error {
-	ctx = withLabel(ctx, "server")
-
-	// generate TLS certificate
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return er(ctx, err)
-	}
-	template := x509.Certificate{SerialNumber: big.NewInt(1)}
-	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
-	if err != nil {
-		return er(ctx, err)
-	}
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
-	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
-	tlsCert, err := tls.X509KeyPair(certPEM, keyPEM)
-	if err != nil {
-		return er(ctx, err)
-	}
-	config := &tls.Config{
-		Certificates: []tls.Certificate{tlsCert},
-		NextProtos:   []string{"quicssh"},
-	}
+func server(ctx context.Context, cmd *cli.Command) error { //nolint:funlen,cyclop // good reason for refactoring
+	ctx, cancel := context.WithCancel(withLabel(ctx, "server"))
+	defer cancel()
 
 	raddr, err := net.ResolveTCPAddr("tcp", cmd.String("sshdaddr"))
 	if err != nil {
 		return er(ctx, err)
+	}
+
+	activeSessions := new(atomic.Int32)
+	countDown := new(atomic.Int64) // int64 like time.Duration
+
+	timeout, err := time.ParseDuration(cmd.String("idletimeout"))
+	if err != nil {
+		return er(ctx, err)
+	}
+	if timeout > 0 {
+		logf(ctx, "Server runs with idle timeout: %v", timeout)
+		go func() {
+			for {
+				time.Sleep(time.Second)
+				if activeSessions.Load() == 0 {
+					n := time.Duration(countDown.Add(int64(time.Second)))
+					if n >= timeout {
+						logf(ctx, "Timeout %v. Exiting", n)
+						cancel()
+						return
+					}
+					logf(ctx, "Timeout countdown: %v/%v", n, timeout)
+				}
+			}
+		}()
+	}
+
+	config, err := tlsConfig(ctx)
+	if err != nil {
+		return err // already wrapped
 	}
 
 	// configure listener
@@ -66,12 +77,38 @@ func server(ctx context.Context, cmd *cli.Command) error {
 			continue
 		}
 
-		go serverSessionHandler(session.Context(), session, raddr) //nolint:contextcheck // docs: conn closed -> ctx canceled
+		countDown.Store(0)
+		activeSessions.Add(1)
+		go serverSessionHandler(session.Context(), session, raddr, activeSessions) //nolint:contextcheck // docs: conn closed -> ctx canceled
 	}
 }
 
-func serverSessionHandler(ctx context.Context, session quic.Connection, raddr *net.TCPAddr) { // TODO return error
+func tlsConfig(ctx context.Context) (*tls.Config, error) {
+	// generate TLS certificate
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, er(ctx, err)
+	}
+	template := x509.Certificate{SerialNumber: big.NewInt(1)}
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
+	if err != nil {
+		return nil, er(ctx, err)
+	}
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	tlsCert, err := tls.X509KeyPair(certPEM, keyPEM)
+	if err != nil {
+		return nil, er(ctx, err)
+	}
+	return &tls.Config{
+		Certificates: []tls.Certificate{tlsCert},
+		NextProtos:   []string{"quicssh"},
+	}, nil
+}
+
+func serverSessionHandler(ctx context.Context, session quic.Connection, raddr *net.TCPAddr, activeSessions *atomic.Int32) { // TODO return error
 	logf(ctx, "Handling session...")
+	defer activeSessions.Add(-1)
 	defer func() {
 		if err := session.CloseWithError(0, "close"); err != nil {
 			logf(ctx, "Session close error: %v", err)

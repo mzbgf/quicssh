@@ -95,15 +95,29 @@ USAGE:
    quicssh server [command options]
 
 OPTIONS:
-   --bind value      bind address (default: "localhost:4242")
-   --sshdaddr value  target address of sshd (default: "localhost:22")
-   --help, -h        show help
+   --bind value         bind address (default: "localhost:4242")
+   --sshdaddr value     target address of sshd (default: "localhost:22")
+   --idletimeout value  exit on idle interval (10s, 2m, 1h) (default: "0s")
+   --help, -h           show help
 ```
 
 ## Install
 
+### Original
+
 ```console
 $ go get -u moul.io/quicssh
+```
+
+### Install this fork
+
+```console
+# go install github.com/michurin/quicssh@server_idle_exit # won't work, you are to build and intall binnary manually
+cd tmp # somewhere
+git clone https://github.com/michurin/quicssh --branch server_idle_exit --single-branch quicssh-tmp
+cd quicssh-tmp
+go build .
+mv quicssh ~/go/bin # some dir from $PATH
 ```
 
 ## Resources
