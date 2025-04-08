@@ -14,11 +14,11 @@ import (
 	"time"
 
 	quic "github.com/quic-go/quic-go"
-	cli "github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v3"
 )
 
-func server(c *cli.Context) error {
-	ctx := withLabel(c.Context, "server")
+func server(ctx context.Context, cmd *cli.Command) error {
+	ctx = withLabel(ctx, "server")
 
 	// generate TLS certificate
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -41,18 +41,18 @@ func server(c *cli.Context) error {
 		NextProtos:   []string{"quicssh"},
 	}
 
-	raddr, err := net.ResolveTCPAddr("tcp", c.String("sshdaddr"))
+	raddr, err := net.ResolveTCPAddr("tcp", cmd.String("sshdaddr"))
 	if err != nil {
 		return er(ctx, err)
 	}
 
 	// configure listener
-	listener, err := quic.ListenAddr(c.String("bind"), config, nil)
+	listener, err := quic.ListenAddr(cmd.String("bind"), config, nil)
 	if err != nil {
 		return er(ctx, err)
 	}
 	defer listener.Close()
-	logf(ctx, "Listening at %q... (sshd addr: %q)", c.String("bind"), c.String("sshdaddr"))
+	logf(ctx, "Listening at %q... (sshd addr: %q)", cmd.String("bind"), cmd.String("sshdaddr"))
 
 	for {
 		logf(ctx, "Accepting connection...")

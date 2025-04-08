@@ -1,27 +1,28 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 	"time"
 
 	quic "github.com/quic-go/quic-go"
-	cli "github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v3"
 )
 
-func client(c *cli.Context) error {
-	ctx := withLabel(c.Context, "client")
+func client(ctx context.Context, cmd *cli.Command) error {
+	ctx = withLabel(ctx, "client")
 
 	config := &tls.Config{
 		InsecureSkipVerify: true,
 		NextProtos:         []string{"quicssh"},
 	}
 
-	udpAddr, err := net.ResolveUDPAddr("udp", c.String("addr"))
+	udpAddr, err := net.ResolveUDPAddr("udp", cmd.String("addr"))
 	if err != nil {
 		return er(ctx, err)
 	}
-	srcAddr, err := net.ResolveUDPAddr("udp", c.String("localaddr"))
+	srcAddr, err := net.ResolveUDPAddr("udp", cmd.String("localaddr"))
 	if err != nil {
 		return er(ctx, err)
 	}
@@ -50,8 +51,8 @@ func client(c *cli.Context) error {
 	defer stream.Close()
 
 	logf(ctx, "Piping stream with QUIC...")
-	c1 := readAndWrite(withLabel(ctx, "stdout"), stream, c.App.Writer) // App.Writer is stdout
-	c2 := readAndWrite(withLabel(ctx, "stdin"), c.App.Reader, stream)  // App.Reader is stdin
+	c1 := readAndWrite(withLabel(ctx, "stdout"), stream, cmd.Root().Writer) // App.Writer is stdout
+	c2 := readAndWrite(withLabel(ctx, "stdin"), cmd.Root().Reader, stream)  // App.Reader is stdin
 	select {
 	case err = <-c1:
 	case err = <-c2:
