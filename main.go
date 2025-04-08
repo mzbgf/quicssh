@@ -25,9 +25,10 @@ func main() {
 
 func application() *cli.Command {
 	build, _ := debug.ReadBuildInfo()
+	m := build.Main
 	return &cli.Command{
-		Version: build.Main.Version,
-		Usage:   "Client and server parts to proxy SSH (TCP) over UDP using QUIC transport",
+		Version: m.Path + "/" + m.Sum + "/" + m.Version,
+		Usage:   "Client and server parts to proxy SSH (TCP) over QUIC (UDP) transport",
 		Commands: []*cli.Command{
 			{
 				Name: "server",
