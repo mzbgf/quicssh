@@ -66,11 +66,11 @@ func server(ctx context.Context, cmd *cli.Command) error {
 			continue
 		}
 
-		go serverSessionHandler(ctx, session, raddr)
+		go serverSessionHandler(session.Context(), session, raddr) //nolint:contextcheck // docs: conn closed -> ctx canceled
 	}
 }
 
-func serverSessionHandler(ctx context.Context, session quic.Connection, raddr *net.TCPAddr) {
+func serverSessionHandler(ctx context.Context, session quic.Connection, raddr *net.TCPAddr) { // TODO return error
 	logf(ctx, "Handling session...")
 	defer func() {
 		if err := session.CloseWithError(0, "close"); err != nil {
@@ -87,7 +87,7 @@ func serverSessionHandler(ctx context.Context, session quic.Connection, raddr *n
 	}
 }
 
-func serverStreamHandler(ctx context.Context, conn io.ReadWriteCloser, raddr *net.TCPAddr) {
+func serverStreamHandler(ctx context.Context, conn io.ReadWriteCloser, raddr *net.TCPAddr) { // TODO return error
 	logf(ctx, "Handling stream...")
 	defer conn.Close()
 
