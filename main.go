@@ -11,21 +11,21 @@ import (
 	"runtime"
 	"runtime/debug"
 
-	cli "github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v3"
 )
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background()) // TODO: application context, good for graceful shutdown
 	defer cancel()
 	app := application()
-	if err := app.RunContext(ctx, os.Args); err != nil {
+	if err := app.Run(ctx, os.Args); err != nil {
 		logf(ctx, "Error: %v", err)
 	}
 }
 
-func application() *cli.App {
+func application() *cli.Command {
 	build, _ := debug.ReadBuildInfo()
-	return &cli.App{
+	return &cli.Command{
 		Version: build.Main.Version,
 		Usage:   "Client and server parts to proxy SSH (TCP) over UDP using QUIC transport",
 		Commands: []*cli.Command{

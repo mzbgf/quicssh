@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	cli "github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v3"
 )
 
 const (
@@ -81,21 +81,21 @@ func TestWrongArgs(t *testing.T) {
 	})
 }
 
-func app(ctx context.Context, args []string, opts ...func(*cli.App)) error {
+func app(ctx context.Context, args []string, opts ...func(*cli.Command)) error {
 	app := application()
 	for _, o := range opts {
 		o(app)
 	}
-	return app.RunContext(ctx, args)
+	return app.Run(ctx, args)
 }
 
-func tweaksStdIO() (io.WriteCloser, io.ReadCloser, func(*cli.App)) {
+func tweaksStdIO() (io.WriteCloser, io.ReadCloser, func(*cli.Command)) {
 	r1, w1 := io.Pipe()
 	r2, w2 := io.Pipe()
 	// returning the opposite end of pipes and option to tweak app
-	return w1, r2, func(app *cli.App) {
-		app.Reader = r1
-		app.Writer = w2
+	return w1, r2, func(cmd *cli.Command) {
+		cmd.Root().Reader = r1
+		cmd.Root().Writer = w2
 	}
 }
 
