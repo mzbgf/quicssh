@@ -24,6 +24,7 @@ func main() {
 }
 
 func application() *cli.Command {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
 	build, _ := debug.ReadBuildInfo()
 	m := build.Main
 	return &cli.Command{
