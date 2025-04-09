@@ -12,40 +12,45 @@
 
 ## Architecture
 
-Standard SSH connection
+Ordinary SSH connection
 
+```mermaid
+flowchart TB
+subgraph i["internet"]
+direction TB
+subgraph h1["local host"]
+    n1["ssh bob@example\.com"]
+end
+subgraph h2["remote server exmaple\.com"]
+    n2["sshd"]
+end
+end
+n1 -- TCP --> n2
 ```
-┌───────────────────────────────────────┐             ┌───────────────────────┐
-│                  bob                  │             │         wopr          │
-│ ┌───────────────────────────────────┐ │             │ ┌───────────────────┐ │
-│ │           ssh user@wopr           │─┼────tcp──────┼▶│       sshd        │ │
-│ └───────────────────────────────────┘ │             │ └───────────────────┘ │
-└───────────────────────────────────────┘             └───────────────────────┘
-```
-
----
 
 SSH Connection proxified with QUIC
 
-```
-┌───────────────────────────────────────┐             ┌───────────────────────┐
-│                  bob                  │             │         wopr          │
-│ ┌───────────────────────────────────┐ │             │ ┌───────────────────┐ │
-│ │ssh -o ProxyCommand="quicssh client│ │             │ │       sshd        │ │
-│ │     --addr %h:4545" user@wopr     │ │             │ └───────────────────┘ │
-│ │                                   │ │             │           ▲           │
-│ └───────────────────────────────────┘ │             │           │           │
-│                   │                   │             │           │           │
-│                process                │             │  tcp to localhost:22  │
-│                   │                   │             │           │           │
-│                   ▼                   │             │           │           │
-│ ┌───────────────────────────────────┐ │             │┌─────────────────────┐│
-│ │  quicssh client --addr wopr:4545  │─┼─quic (udp)──▶│   quicssh server    ││
-│ └───────────────────────────────────┘ │             │└─────────────────────┘│
-└───────────────────────────────────────┘             └───────────────────────┘
+```mermaid
+flowchart TB
+subgraph i["internet"]
+direction TB
+subgraph h1["local host"]
+    n1["ssh -o ProxyCommand 'quicssh client --addr %h:4545' bob@example\.com"]
+    n2["quicssh client --addr wopr:4545"]
+end
+subgraph h2["remote server exmaple\.com"]
+    n3["quicssh server --addr :4545"]
+    n4["sshd"]
+end
+end
+n1 -- stdio pipe --> n2
+n2 -- UDP (QUIC) --> n3
+n3 -- TCP --> n4
 ```
 
 ## Usage
+
+### Modes
 
 ```console
 $ quicssh -h
@@ -68,7 +73,7 @@ GLOBAL OPTIONS:
    --version, -v  print the version
 ```
 
-### Client
+### Client mode
 
 ```console
 $ quicssh client -h
@@ -84,7 +89,7 @@ OPTIONS:
    --help, -h         show help
 ```
 
-### Server
+### Server mode
 
 ```console
 $ quicssh server -h
