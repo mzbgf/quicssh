@@ -109,3 +109,15 @@ func label(ctx context.Context) string {
 	}
 	return label
 }
+
+func WithCancelFromCtx(ctx, cancelCtx context.Context) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(ctx)
+	go func() {
+		select {
+		case <-cancelCtx.Done():
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	return ctx, cancel
+}
