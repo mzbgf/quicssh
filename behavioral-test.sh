@@ -11,6 +11,10 @@ nc -help 2>&1 | head -1
 echo 'Showing golang version:'
 go version
 
+echo 'Cleaning up...'
+rm -f ci_{client,server,sshd}_std{out,err} quicssh
+echo 'Done'
+
 echo 'Building binary...'
 go build .
 echo 'Done'
@@ -20,9 +24,9 @@ echo 'Starting fake sshd...'
 (
     (
         echo 'RESPONSE-OK'
-        sleep 1 # take the time to accept response
+        sleep 1 # take the time to accept response; client will sleep for 2s
     ) |
-    nc -l 10022 >ci_sshd_stdout 2>ci_sshd_stderr
+    nc -lvvnp 10022 >ci_sshd_stdout 2>ci_sshd_stderr
 ) &
 sleep 1 # time to establish listener
 echo 'Proceed'
@@ -33,7 +37,7 @@ sleep 1
 echo 'Proceed'
 
 echo 'Talking with quicssh server...'
-(echo REQUEST-OK; sleep 1) | ./quicssh client --addr localhost:10042 >ci_client_stdout 2>ci_client_stderr
+(echo REQUEST-OK; sleep 2) | ./quicssh client --addr localhost:10042 >ci_client_stdout 2>ci_client_stderr
 echo 'Finished'
 sleep 1
 
@@ -48,9 +52,9 @@ echo 'Done'
 echo 'Showing logs:'
 for f in ci_sshd_stdout ci_sshd_stderr ci_server_stdout ci_server_stderr ci_client_stdout ci_client_stderr
 do
-    echo "=== FILE $f ================="
+    echo "::group::FILE $f"
     cat $f
-    echo "=== EOF ==="
+    echo "::endgroup::"
 done
 
 echo 'Check ci_sshd_stdout'
