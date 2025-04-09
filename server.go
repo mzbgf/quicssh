@@ -7,7 +7,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"io"
 	"math/big"
 	"net"
@@ -67,9 +66,9 @@ func server(ctx context.Context, cmd *cli.Command) error { //nolint:funlen,cyclo
 
 	for {
 		logf(ctx, "Accepting connection...")
-		session, err := listener.Accept(ctx)
+		conn, err := listener.Accept(ctx)
 		if err != nil {
-			if errors.Is(err, context.Canceled) {
+			if ctx.Err() != nil {
 				return er(ctx, err)
 			}
 			logf(ctx, "Listener error (sleeping one second): %v", err)
@@ -79,7 +78,7 @@ func server(ctx context.Context, cmd *cli.Command) error { //nolint:funlen,cyclo
 
 		countDown.Store(0)
 		activeSessions.Add(1)
-		go serverSessionHandler(session.Context(), session, raddr, activeSessions) //nolint:contextcheck // docs: conn closed -> ctx canceled
+		go serverConnectionHandler(ctx, conn, raddr, activeSessions)
 	}
 }
 
@@ -106,16 +105,18 @@ func tlsConfig(ctx context.Context) (*tls.Config, error) {
 	}, nil
 }
 
-func serverSessionHandler(ctx context.Context, session quic.Connection, raddr *net.TCPAddr, activeSessions *atomic.Int32) { // TODO return error
+func serverConnectionHandler(ctx context.Context, conn quic.Connection, raddr *net.TCPAddr, activeSessions *atomic.Int32) { // TODO return error
 	logf(ctx, "Handling session...")
+	ctx, cancel := WithCancelFromCtx(ctx, conn.Context()) // conn.Context() isn't linked with ctx from listener.Accept(ctx)
+	defer cancel()
 	defer activeSessions.Add(-1)
 	defer func() {
-		if err := session.CloseWithError(0, "close"); err != nil {
+		if err := conn.CloseWithError(0, "close"); err != nil {
 			logf(ctx, "Session close error: %v", err)
 		}
 	}()
 	for {
-		stream, err := session.AcceptStream(ctx)
+		stream, err := conn.AcceptStream(ctx)
 		if err != nil {
 			logf(ctx, "Session error: %v", err)
 			break
