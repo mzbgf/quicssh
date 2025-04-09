@@ -12,40 +12,30 @@
 
 ## Architecture
 
-Ordinary SSH connection
-
 ```mermaid
 flowchart TB
-subgraph i["internet"]
+subgraph i["Internet"]
 direction TB
-subgraph h1["local host"]
-    n1["ssh bob@example\.com"]
+subgraph h1["client host A (ordinary connection)"]
+    n11["ssh bob@example\.com"]
 end
-subgraph h2["remote server exmaple\.com"]
-    n2["sshd"]
+subgraph h2["client host B (proxying)"]
+    n21["ssh -o ProxyCommand 'quicssh client --addr %h:4545' alice@example\.com"]
+    n22["quicssh client --addr example.com:4545"]
 end
-end
-n1 -- TCP --> n2
-```
-
-SSH Connection proxified with QUIC
-
-```mermaid
-flowchart TB
-subgraph i["internet"]
-direction TB
-subgraph h1["local host"]
-    n1["ssh -o ProxyCommand 'quicssh client --addr %h:4545' bob@example\.com"]
-    n2["quicssh client --addr wopr:4545"]
-end
-subgraph h2["remote server exmaple\.com"]
-    n3["quicssh server --addr :4545"]
-    n4["sshd"]
+subgraph h3["remote server exmaple\.com"]
+    n31["quicssh server --addr :4545"]
+    n32["sshd"]
 end
 end
-n1 -- stdio pipe --> n2
-n2 -- UDP (QUIC) --> n3
-n3 -- TCP --> n4
+n11 x1@====>|ordinary TCP connection| n32
+n21 x2@-->|stdio pipe| n22
+n22 x3@==>|"QUIC (UDP)"| n31
+n31 x4@-->|TCP| n32
+x1@{ animate: true }
+x2@{ animate: true }
+x3@{ animate: true }
+x4@{ animate: true }
 ```
 
 ## Usage
