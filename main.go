@@ -111,7 +111,7 @@ func label(ctx context.Context) string {
 	return label
 }
 
-func WithCancelFromCtx(ctx, cancelCtx context.Context) (context.Context, context.CancelFunc) {
+func withCancelFromCtx(ctx, cancelCtx context.Context) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
 	go func() {
 		select {
