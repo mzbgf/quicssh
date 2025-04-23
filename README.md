@@ -102,13 +102,24 @@ $ go get -u moul.io/quicssh
 
 ### Install this fork
 
+<!-- 
 ```console
 # go install github.com/michurin/quicssh@server_idle_exit # won't work, you are to build and intall binnary manually
+# cd tmp # somewhere
+# git clone https://github.com/michurin/quicssh --branch server_idle_exit --single-branch quicssh-tmp
+# cd quicssh-tmp
+# go build .
+# mv quicssh ~/go/bin # some dir from $PATH
+go install github.com/mzbgf/quicssh@latest
 cd tmp # somewhere
 git clone https://github.com/michurin/quicssh --branch server_idle_exit --single-branch quicssh-tmp
 cd quicssh-tmp
 go build .
 mv quicssh ~/go/bin # some dir from $PATH
+``` -->
+
+```console
+go install github.com/mzbgf/quicssh@latest
 ```
 
 ## Resources

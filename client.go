@@ -3,12 +3,29 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	quic "github.com/quic-go/quic-go"
 	cli "github.com/urfave/cli/v3"
 )
+
+// resolveTxtRecord 解析TXT记录获取IP和端口
+func resolveTxtRecord(ctx context.Context, domain string) (string, error) {
+	records, err := net.LookupTXT(domain)
+	if err != nil {
+		return "", err
+	}
+	
+	if len(records) == 0 {
+		return "", fmt.Errorf("no TXT records found for domain: %s", domain)
+	}
+	
+	// 使用第一条TXT记录，格式应为"ip:port"
+	return records[0], nil
+}
 
 func client(ctx context.Context, cmd *cli.Command) error {
 	ctx = withLabel(ctx, "client")
@@ -18,7 +35,23 @@ func client(ctx context.Context, cmd *cli.Command) error {
 		NextProtos:         []string{"quicssh"},
 	}
 
-	udpAddr, err := net.ResolveUDPAddr("udp", cmd.String("addr"))
+	addr := cmd.String("addr")
+	
+	// 检查是否是txt://格式
+	if strings.HasPrefix(addr, "txt://") {
+		domain := strings.TrimPrefix(addr, "txt://")
+		logf(ctx, "解析域名TXT记录: %s", domain)
+		
+		result, err := resolveTxtRecord(ctx, domain)
+		if err != nil {
+			return er(ctx, err)
+		}
+		
+		logf(ctx, "TXT记录解析结果: %s", result)
+		addr = result
+	}
+
+	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return er(ctx, err)
 	}
