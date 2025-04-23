@@ -14,13 +14,17 @@ import (
 
 // resolveTxtRecord 解析TXT记录获取IP和端口
 func resolveTxtRecord(ctx context.Context, domain string) (string, error) {
-	records, err := net.LookupTXT(domain)
+	// 移除可能存在的端口号
+	domainParts := strings.Split(domain, ":")
+	cleanDomain := domainParts[0]
+	
+	records, err := net.LookupTXT(cleanDomain)
 	if err != nil {
 		return "", err
 	}
 	
 	if len(records) == 0 {
-		return "", fmt.Errorf("no TXT records found for domain: %s", domain)
+		return "", fmt.Errorf("no TXT records found for domain: %s", cleanDomain)
 	}
 	
 	// 使用第一条TXT记录，格式应为"ip:port"
@@ -39,6 +43,7 @@ func client(ctx context.Context, cmd *cli.Command) error {
 	
 	// 检查是否是txt://格式
 	if strings.HasPrefix(addr, "txt://") {
+		// 提取域名部分，可能包含端口号
 		domain := strings.TrimPrefix(addr, "txt://")
 		logf(ctx, "解析域名TXT记录: %s", domain)
 		
