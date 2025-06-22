@@ -6,7 +6,7 @@ toolchain go1.24.0
 
 require (
 	github.com/quic-go/quic-go v0.52.0
-	github.com/urfave/cli/v3 v3.3.3
+	github.com/urfave/cli/v3 v3.3.8
 )
 
 require (
